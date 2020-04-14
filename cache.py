@@ -7,26 +7,6 @@ import math
 from binascii import hexlify
 from os import urandom
 
-
-"""
-# Notes!
-# CACHE VARIABLES
-# read counter, read hits counter, read miss counter
-# write counter, write hits counter, write miss counter
-# writeback counter
-
-# STATE Matricies 
-# LRU counters
-# LFU counters
-# Validity flags
-# Dirty flags
-
-# FUNCTIONS
-# Read(index, tag) -> 0 miss / 1 hit, increment read counter
-
-# create, read, write
-"""
-
 class CACHE:
   def __init__(self, addr_width, cache_size, block_size, assoc = 1, replacement='LRU',
                is_debug=True):
@@ -58,15 +38,20 @@ class CACHE:
 
     self.tag_width = self.addr_width - self.offset_width - self.index_width
 
-    # tag shift
     self.tag_shift = int(math.log(self.size // 1, 2))
+    self.set_shift = int(math.log(self.block_size, 2))
 
     # Build physical memory, randomly generate values in physical memory
     self.memory = bytearray(urandom(self.addr_width ** 2))
 
     # Build cache
-    self.cache = [0] * self.sets
+    self.lines = int(self.size/self.block_size)
+    self.cache = [[0]*self.lines] * self.sets
+
+    # Management bits
+    self.tag_bits = [1] * self.sets # NOTE: 1 = unused
     self.valid_bits = [0] * self.sets
+    self.dirty_bits = [0] * self.sets
 
     # counters
     self.counter_reads = 0
@@ -86,22 +71,57 @@ class CACHE:
       print("----------------------")
 
 
+  def write(self, address, byte):
+    """TODO: Writes byte to address.
+
+    """
+    pass
+
   def read(self, address):
+    """Reads an address from the cache.
+    Returns 1 if hit, 0 otherwise.
+    :param int address: Cache address.
+
+    """
     if self.debug:
       print("Read:", hex(address))
     self.counter_reads += 1
+
     # calculate tag
     tag = address >> self.tag_shift
+
     # calculate index
     set_mask = self.size // self.block_size
     set_mask = (self.size // (self.block_size * 1)) - 1
-    set_shift = int(math.log(self.block_size, 2))
-    set_num = (address >> set_shift) & set_mask
+    set_num = (address >> self.set_shift) & set_mask
     index = set_num * 1
+
     # calculate offset
     offset = address & (self.block_size - 1)
+
     if self.debug:
       print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
+
+    if self.debug:
+      print("* Checking Set #", index)
+
+    if not index == self.tag_bits[index]:
+      if self.debug:
+        print("* Cache MISS!")
+      self.counter_read_miss += 1
+      # select v[index] for replacement
+      self.valid_bits[index] = 1
+      # set tag bit to index
+      self.tag_bits[index] = index
+      # TODO: fill cache with phy. mem contents
+      if self.debug:
+        print("* Status updated.")
+      return 0
+    else:
+      if self.debug:
+        print("* Cache HIT!")
+      # TODO: print data at cache location index[offset]
+      return 1
 
 
 ### SIMULATOR ###
@@ -118,9 +138,15 @@ def main():
 
   myCache = CACHE(addr_width, cache_size, block_size, 1)
 
+  # Access addr 0x01 from cache
+  myCache.read(0x01)
+
+  """
+  # Testing 0x00->0x09
   for i in range(0, 9):
     myCache.read(i)
     print("----")
+  """
 
 if __name__ == '__main__':
     main()
