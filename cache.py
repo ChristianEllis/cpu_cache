@@ -56,7 +56,7 @@ class CACHE:
     # m=4, c=32, k =2, e=1
     self.index_width = int(math.log2(self.size/self.block_size/self.assoc))
 
-    self.tag_width = self.size - self.offset_width - self.index_width
+    self.tag_width = self.addr_width - self.offset_width - self.index_width
 
     # Build physical memory, randomly generate values in physical memory
     self.memory = bytearray(urandom(self.addr_width ** 2))
@@ -81,23 +81,20 @@ class CACHE:
       print("Index Width: ", self.index_width)
       print("Tag Width: ", self.tag_width)
       print("----------------------")
-      print("---Data---")
-      print("Cache: ", self.cache)
-      print("Valid Bits: ", self.valid_bits)
-      print("Memory: ", self.memory)
 
 
   def read(self, address):
+    if self.debug:
+      print("Read:", hex(address))
     self.counter_reads += 1
-    # convert to binary string
-    addr = "{0:b}".format(address)
-    print("Address: ", addr)
-    # calculate offset
-    offset = addr[self.offset_width:0]
-    print("Offset: ", offset)
+    # calculate tag
+    tag = 0
     # calculate index
-    idx = addr[self.index_width:self.offset_width]
-    print("Index: ", idx)
+    index = 0 
+    # calculate offset
+    offset = address & (self.block_size - 1)
+    if self.debug:
+      print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
 
 
 ### SIMULATOR ###
@@ -106,7 +103,7 @@ def main():
   # TODO: take in from sys.argv
   print("\t * Creating Cache")
   addr_width = 4
-  cache_size = 32
+  cache_size = 8
   block_size = 2
   print("Address Width: ", addr_width)
   print("Cache Size: ", cache_size)
@@ -114,7 +111,6 @@ def main():
 
   myCache = CACHE(addr_width, cache_size, block_size, 1)
 
-  print("Reading cache at 0x01")
   myCache.read(0x01)
 
 if __name__ == '__main__':
