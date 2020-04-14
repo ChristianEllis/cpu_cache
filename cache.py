@@ -58,6 +58,9 @@ class CACHE:
 
     self.tag_width = self.addr_width - self.offset_width - self.index_width
 
+    # tag shift
+    self.tag_shift = int(math.log(self.size // 1, 2))
+
     # Build physical memory, randomly generate values in physical memory
     self.memory = bytearray(urandom(self.addr_width ** 2))
 
@@ -88,7 +91,7 @@ class CACHE:
       print("Read:", hex(address))
     self.counter_reads += 1
     # calculate tag
-    tag = 0
+    tag = address >> self.tag_shift
     # calculate index
     index = 0 
     # calculate offset
@@ -111,7 +114,8 @@ def main():
 
   myCache = CACHE(addr_width, cache_size, block_size, 1)
 
-  myCache.read(0x01)
+  myCache.read(0x03)
+  myCache.read(0x05)
 
 if __name__ == '__main__':
     main()
