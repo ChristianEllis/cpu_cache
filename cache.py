@@ -7,6 +7,9 @@ import math
 from binascii import hexlify
 from os import urandom
 
+
+"""
+# Notes!
 # CACHE VARIABLES
 # read counter, read hits counter, read miss counter
 # write counter, write hits counter, write miss counter
@@ -22,6 +25,7 @@ from os import urandom
 # Read(index, tag) -> 0 miss / 1 hit, increment read counter
 
 # create, read, write
+"""
 
 class CACHE:
   def __init__(self, addr_width, cache_size, block_size, assoc = 1, replacement='LRU',
@@ -33,6 +37,7 @@ class CACHE:
     :param int assoc: Associativity
     :param str replacement: Cache replacement policy.
     :param bool is_debug: Debugging enabled?
+
     """
     self.debug = is_debug
     self.addr_width = addr_width
@@ -57,7 +62,8 @@ class CACHE:
     self.memory = bytearray(urandom(self.addr_width ** 2))
 
     # Build cache
-    # TODO
+    self.cache = [0] * self.sets
+    self.valid_bits = [0] * self.sets
 
     # counters
     self.counter_reads = 0
@@ -74,8 +80,24 @@ class CACHE:
       print("Offset Width: ", self.offset_width)
       print("Index Width: ", self.index_width)
       print("Tag Width: ", self.tag_width)
-      print("Memory Trace: ", self.memory)
       print("----------------------")
+      print("---Data---")
+      print("Cache: ", self.cache)
+      print("Valid Bits: ", self.valid_bits)
+      print("Memory: ", self.memory)
+
+
+  def read(self, address):
+    self.counter_reads += 1
+    # convert to binary string
+    addr = "{0:b}".format(address)
+    print("Address: ", addr)
+    # calculate offset
+    offset = addr[self.offset_width:0]
+    print("Offset: ", offset)
+    # calculate index
+    idx = addr[self.index_width:self.offset_width]
+    print("Index: ", idx)
 
 
 ### SIMULATOR ###
@@ -91,6 +113,9 @@ def main():
   print("Block Size: ", block_size)
 
   myCache = CACHE(addr_width, cache_size, block_size, 1)
+
+  print("Reading cache at 0x01")
+  myCache.read(0x01)
 
 if __name__ == '__main__':
     main()
