@@ -93,7 +93,11 @@ class CACHE:
     # calculate tag
     tag = address >> self.tag_shift
     # calculate index
-    index = 0 
+    set_mask = self.size // self.block_size
+    set_mask = (self.size // (self.block_size * 1)) - 1
+    set_shift = int(math.log(self.block_size, 2))
+    set_num = (address >> set_shift) & set_mask
+    index = set_num * 1
     # calculate offset
     offset = address & (self.block_size - 1)
     if self.debug:
@@ -114,8 +118,9 @@ def main():
 
   myCache = CACHE(addr_width, cache_size, block_size, 1)
 
-  myCache.read(0x03)
-  myCache.read(0x05)
+  for i in range(0, 9):
+    myCache.read(i)
+    print("----")
 
 if __name__ == '__main__':
     main()
