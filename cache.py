@@ -46,7 +46,10 @@ class CACHE:
 
     # Build cache
     self.lines = int(self.size/self.block_size)
-    self.cache = [[0]*self.lines] * self.sets
+    self.cache = [0] * self.lines
+
+    self.addresses = [0] * 8
+
 
     # Management bits
     self.tag_bits = [1] * self.sets # NOTE: 1 = unused
@@ -102,26 +105,29 @@ class CACHE:
     if self.debug:
       print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
 
-    if self.debug:
-      print("* Checking Set #", index)
-
-    if not index == self.tag_bits[index]:
-      if self.debug:
-        print("* Cache MISS!")
-      self.counter_read_miss += 1
-      # select v[index] for replacement
-      self.valid_bits[index] = 1
-      # set tag bit to index
-      self.tag_bits[index] = index
-      # TODO: fill cache with phy. mem contents
-      if self.debug:
-        print("* Status updated.")
-      return 0
+    if self.valid_bits[index] == 1:
+      if self.cache[index] == tag:
+        print("hit!")
+        print(self.valid_bits)
+        print(self.cache)
+      else:
+        print("Miss2!")
+        print(self.valid_bits)
+        print(self.cache)
+        self.cache[index] = tag
     else:
-      if self.debug:
-        print("* Cache HIT!")
-      # TODO: print data at cache location index[offset]
-      return 1
+      print("miss!")
+      print(self.valid_bits)
+      print(self.cache)
+      self.valid_bits[index] = 1
+      self.cache[index] = tag
+      self.addresses[index:index+self.block_size] = self.memory[index:index+self.block_size]
+      print('addr: ', self.addresses)
+
+
+  def print_cache(self):
+    """Prints status of cache"""
+    print(self.cache)
 
 
 ### SIMULATOR ###
@@ -138,7 +144,7 @@ def main():
 
   myCache = CACHE(addr_width, cache_size, block_size, 1)
 
-  # Access addr 0x01 from cache
+  myCache.read(0x00)
   myCache.read(0x01)
 
   """
