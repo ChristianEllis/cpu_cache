@@ -104,24 +104,26 @@ class CACHE:
     if self.debug:
       print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
 
+    print("Looking for Tag #", tag)
     if self.tag_bits[index] == 1:
       # if tag bit at set index is unused
-      print("MISS!")
+      print("Write: {} = Miss".format(hex(address)))
 
       # set tag bit
       self.tag_bits[index] = 0
       self.valid_bits[index] = 1
+      self.counter_write_miss += 1
+    else:
+        print("Write: {} = Hit".format(hex(address)))
 
-      # read block into cache from memory at address
-      for i in range(0, self.block_size):
-        self.cache_data[index][offset+i] = self.memory[index+offset+i]
-      print('cache: ', self.cache_data)
-      # set dirty bit
-      self.dirty_bits[index] = 1
-      # write back byte into cache
-      self.cache_data[index][offset] = data
-      print('cache: ', self.cache_data)
-      
+    # read block into cache from memory at address
+    for i in range(0, self.block_size-1):
+      self.cache_data[index][offset+i] = self.memory[index+offset+i]
+
+    # set dirty bit
+    self.dirty_bits[index] = 1
+    # write back byte into cache
+    self.cache_data[index][offset] = data
 
   def read(self, address):
     """Reads an address from the cache.
@@ -192,7 +194,12 @@ def main():
 
 
   myCache.write(0x00, 0x01)
-  myCache.read(0x00)
+
+  myCache.read(0x03)
+
+  myCache.write(0x03, 0x01)
+
+  myCache.read(0x03)
 
   # print output of cache
   myCache.print_cache()
