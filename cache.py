@@ -48,13 +48,14 @@ class CACHE:
     self.lines = int(self.size/self.block_size)
     self.cache = [0] * self.lines
 
+    self.set_addresses =  [[0 for x in range(0, 2)] for x in range(0, self.lines)]
+
     self.addresses = [0] * 8
 
-
     # Management bits
-    self.tag_bits = [1] * self.sets # NOTE: 1 = unused
-    self.valid_bits = [0] * self.sets
-    self.dirty_bits = [0] * self.sets
+    self.tag_bits = [1] * self.lines # NOTE: 1 = unused
+    self.valid_bits = [0] * self.lines
+    self.dirty_bits = [0] * self.lines
 
     # counters
     self.counter_reads = 0
@@ -75,7 +76,7 @@ class CACHE:
 
 
   def write(self, address, byte):
-    """TODO: Writes byte to address.
+    """TODO: Writes a byte to address.
 
     """
     pass
@@ -86,8 +87,6 @@ class CACHE:
     :param int address: Cache address.
 
     """
-    if self.debug:
-      print("Read:", hex(address))
     self.counter_reads += 1
 
     # calculate tag
@@ -107,31 +106,34 @@ class CACHE:
 
     if self.valid_bits[index] == 1:
       if self.cache[index] == tag:
-        print("hit!")
+        print("Read: {} = Hit".format(hex(address)))
         self.counter_read_hit += 1
       else:
-        print("Miss2!")
+        print("Read: {} = Miss".format(hex(address)))
         self.cache[index] = tag
         self.counter_read_miss += 1
     else:
-      print("miss!")
+      print("Read: {} = Miss".format(hex(address)))
       self.valid_bits[index] = 1
       self.cache[index] = tag
-      # address replacement for miss
-      self.addresses[index:index+self.block_size] = self.memory[index:index+self.block_size]
+      # pull address from phy. memory
       self.counter_read_miss += 1
-    
-    # print cache status
-    self.print_cache()
+
+
+
+    self.set_addresses[index][offset] = urandom(1)
+
     self.counter_reads += 1
+    print(self.set_addresses)
 
   def print_cache(self):
     """Displays contents of cache"""
     print("---cache dump---")
-    print("Cache[0:2]:", self.addresses[0:2])
-    print("Cache[2:4]:", self.addresses[2:4])
-    print("Cache[4:6]:", self.addresses[4:6])
-    print("Cache[6:8]:", self.addresses[6:8])
+    print(self.addresses)
+    print("Cache[0:2]:", self.addresses[0:1])
+    print("Cache[2:4]:", self.addresses[2:3])
+    print("Cache[4:6]:", self.addresses[4:5])
+    print("Cache[6:8]:", self.addresses[6:7])
     print("----------------")
 
   def cache_stats(self):
@@ -141,9 +143,7 @@ class CACHE:
 
 ### SIMULATOR ###
 def main():
-  # fixed parameters
-  # TODO: take in from sys.argv
-  print("\t * Creating Cache")
+  # -- cache parameters --- #
   addr_width = 4
   cache_size = 8
   block_size = 2
@@ -157,16 +157,18 @@ def main():
   myCache.read(0x01)
   myCache.read(0x02)
   myCache.read(0x03)
-
-  # display the stats!
-  myCache.cache_stats()
-
-  """
+  myCache.read(0x04)
+  myCache.read(0x05)
+  myCache.read(0x06)
+  myCache.read(0x07)
+"""
   # Testing 0x00->0x09
-  for i in range(0, 9):
+  for i in range(0, 8):
     myCache.read(i)
-    print("----")
-  """
+    myCache.print_cache()
+"""
+  # myCache.print_cache()
+  #myCache.cache_stats()
 
 if __name__ == '__main__':
     main()
