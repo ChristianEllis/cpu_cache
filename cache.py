@@ -47,7 +47,7 @@ class CACHE:
     self.lines = int(self.size/self.block_size)
     self.cache = [0] * self.lines
 
-    self.cache_data =  [[0 for x in range(0, 2)] for x in range(0, self.lines)]
+    self.cache_data =  [[0 for x in range(0, self.block_size)] for x in range(0, self.lines)]
 
     self.addresses = [0] * 8
 
@@ -124,7 +124,7 @@ class CACHE:
         self.counter_write_hit += 1
 
     # read block into cache from memory at address
-    for i in range(0, self.block_size-1):
+    for i in range(0, self.block_size-offset):
       self.cache_data[index][offset+i] = self.memory[index+offset+i]
 
     # set dirty bit
@@ -167,7 +167,7 @@ class CACHE:
       self.counter_read_miss += 1
 
     # pull block_size blocks from physical memory into cache
-    for i in range(0, self.block_size-1):
+    for i in range(0, self.block_size-offset):
       self.cache_data[index][offset+i] = self.memory[index+offset+i]
 
     # increment the total counter reads
@@ -208,7 +208,7 @@ def main():
   # -- cache parameters --- #
   addr_width = 4
   cache_size = 8
-  block_size = 2
+  block_size = 4
 
   print("-- Cache Details --")
   print("Address Width: ", addr_width)
