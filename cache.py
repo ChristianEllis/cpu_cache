@@ -108,27 +108,36 @@ class CACHE:
     if self.valid_bits[index] == 1:
       if self.cache[index] == tag:
         print("hit!")
-        print(self.valid_bits)
-        print(self.cache)
+        self.counter_read_hit += 1
       else:
         print("Miss2!")
-        print(self.valid_bits)
-        print(self.cache)
         self.cache[index] = tag
+        self.counter_read_miss += 1
     else:
       print("miss!")
-      print(self.valid_bits)
-      print(self.cache)
       self.valid_bits[index] = 1
       self.cache[index] = tag
+      # address replacement for miss
       self.addresses[index:index+self.block_size] = self.memory[index:index+self.block_size]
-      print('addr: ', self.addresses)
-
+      self.counter_read_miss += 1
+    
+    # print cache status
+    self.print_cache()
+    self.counter_reads += 1
 
   def print_cache(self):
-    """Prints status of cache"""
-    print(self.cache)
+    """Displays contents of cache"""
+    print("---cache dump---")
+    print("Cache[0:2]:", self.addresses[0:2])
+    print("Cache[2:4]:", self.addresses[2:4])
+    print("Cache[4:6]:", self.addresses[4:6])
+    print("Cache[6:8]:", self.addresses[6:8])
+    print("----------------")
 
+  def cache_stats(self):
+    """Display cache counter statistics."""
+    print("total reads: {}\ntotal writes: {}\n".format(self.counter_reads, self.counter_writes))
+    print("read hits: {}\nread misses:{}\n".format(self.counter_read_hit, self.counter_read_miss))
 
 ### SIMULATOR ###
 def main():
@@ -146,6 +155,11 @@ def main():
 
   myCache.read(0x00)
   myCache.read(0x01)
+  myCache.read(0x02)
+  myCache.read(0x03)
+
+  # display the stats!
+  myCache.cache_stats()
 
   """
   # Testing 0x00->0x09
