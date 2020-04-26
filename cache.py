@@ -2,7 +2,6 @@
 #  Direct-Mapped Cache Simulator
 #  Brent Rubell and Christian Ellis
 
-# imports
 import math
 from binascii import hexlify
 from os import urandom
@@ -79,6 +78,8 @@ class CACHE:
     """Breaks down address into tag, index, offset.
     Returns: tag, index, offset
     """
+    if self.debug:
+      print("Splitting T.I.O...")
     # calculate tag
     tag = address >> self.tag_shift
 
@@ -90,6 +91,10 @@ class CACHE:
 
     # calculate offset
     offset = address & (self.block_size - 1)
+    
+    if self.debug:
+      print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
+
     return tag, index, offset
 
   def write(self, address, data):
@@ -102,19 +107,21 @@ class CACHE:
     # split addr into TIO
     tag, index, offset = self.split_tio(address)
     if self.debug:
-      print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
+      print("Looking for Tag #", tag)
 
-    print("Looking for Tag #", tag)
     if self.tag_bits[index] == 1:
       # if tag bit at set index is unused
-      print("Write: {} = Miss".format(hex(address)))
+      if self.debug:
+        print("Write: {} = Miss".format(hex(address)))
 
       # set tag bit
       self.tag_bits[index] = 0
       self.valid_bits[index] = 1
       self.counter_write_miss += 1
     else:
-        print("Write: {} = Hit".format(hex(address)))
+        if self.debug:
+          print("Write: {} = Hit".format(hex(address)))
+        self.counter_write_hit += 1
 
     # read block into cache from memory at address
     for i in range(0, self.block_size-1):
@@ -125,9 +132,13 @@ class CACHE:
     # write back byte into cache
     self.cache_data[index][offset] = data
 
+    # return data at address
+    return self.cache_data[index][offset]
+
+
   def read(self, address):
     """Reads an address from the cache.
-    Returns 1 if hit, 0 otherwise.
+    Returns data from address.
     :param int address: Cache address.
 
     """
@@ -137,20 +148,20 @@ class CACHE:
     # split addr. into TIO
     tag, index, offset = self.split_tio(address)
 
-    if self.debug:
-      print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
-
     if self.valid_bits[index] == 1:
       if self.cache[index] == tag:
-        print("Read: {} = Hit".format(hex(address)))
+        if self.debug:
+          print("Read: {} = Hit".format(hex(address)))
         self.counter_read_hit += 1
       else:
-        print("Read: {} = Miss".format(hex(address)))
+        if self.debug:
+          print("Read: {} = Miss".format(hex(address)))
         self.valid_bits[index] = 1
         self.cache[index] = tag
         self.counter_read_miss += 1
     else:
-      print("Read: {} = Miss".format(hex(address)))
+      if self.debug:
+        print("Read: {} = Miss".format(hex(address)))
       self.valid_bits[index] = 1
       self.cache[index] = tag
       self.counter_read_miss += 1
@@ -162,6 +173,9 @@ class CACHE:
     # increment the total counter reads
     self.counter_reads += 1
 
+    # return data at address
+    return self.cache_data[index][offset]
+
   def flush_cache(self):
     """Flushes cache data."""
     self.cache_data =  [[0 for x in range(0, 2)] for x in range(0, self.lines)]
@@ -169,10 +183,19 @@ class CACHE:
   # graphical utils.
   def print_cache(self):
     """Displays contents of cache"""
-    print("---cache dump---")
-    for i in range(0, 4):
-      print(self.cache_data[i])
+    print("------CACHE-----")
+    print("[add]+off.| data")
     print("----------------")
+    for i in range(0, self.addr_width):
+      for j in range(0, self.addr_width - self.block_size):
+        print("[{}]+{}: ".format(hex(i), hex(j)), end="")
+        print(hex(self.cache_data[i][j]))
+    print("----------------")
+  
+  def print_physical_memory(self):
+    """Displays contents of phy. memory"""
+    for i in range(0, 4):
+      print(hex(self.memory[i]))
 
   def cache_stats(self):
     """Display cache counter statistics."""
@@ -180,28 +203,35 @@ class CACHE:
     print("read hits: {}\nread misses:{}\n".format(self.counter_read_hit, self.counter_read_miss))
 
 
-### SIMULATOR ###
+### "Simulator" ###
 def main():
   # -- cache parameters --- #
   addr_width = 4
   cache_size = 8
   block_size = 2
+
+  print("-- Cache Details --")
   print("Address Width: ", addr_width)
   print("Cache Size: ", cache_size)
   print("Block Size: ", block_size)
+  print("-------------------")
 
-  myCache = CACHE(addr_width, cache_size, block_size, 1)
+  # init. cache object without verbose output
+  # myCache = CACHE(addr_width, cache_size, block_size, 1, is_debug=False)
 
+  # init. cache object WITH verbose output
+  myCache = CACHE(addr_width, cache_size, block_size, 1, is_debug=False)
 
-  myCache.write(0x00, 0x01)
+  # cache operations
+  data = myCache.read(0x00)
+  print("Data: ", hex(data))
 
   myCache.read(0x03)
-
   myCache.write(0x03, 0x01)
+  data = myCache.read(0x03)
+  print("Data: ", hex(data))
 
-  myCache.read(0x03)
-
-  # print output of cache
+  # dump data from cache
   myCache.print_cache()
   # display cache stats
   myCache.cache_stats()
