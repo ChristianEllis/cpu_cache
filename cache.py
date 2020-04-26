@@ -186,8 +186,8 @@ class CACHE:
     print("------CACHE-----")
     print("[add]+off.| data")
     print("----------------")
-    for i in range(0, self.addr_width):
-      for j in range(0, self.addr_width - self.block_size):
+    for i in range(0, self.lines):
+      for j in range(0, self.block_size):
         print("[{}]+{}: ".format(hex(i), hex(j)), end="")
         print(hex(self.cache_data[i][j]))
     print("----------------")
@@ -208,7 +208,7 @@ def main():
   # -- cache parameters --- #
   addr_width = 4
   cache_size = 8
-  block_size = 4
+  block_size = 2
 
   print("-- Cache Details --")
   print("Address Width: ", addr_width)
