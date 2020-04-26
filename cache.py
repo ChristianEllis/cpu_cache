@@ -75,6 +75,23 @@ class CACHE:
       print("----------------------")
 
 
+  def split_tio(self, address):
+    """Breaks down address into tag, index, offset.
+    Returns: tag, index, offset
+    """
+    # calculate tag
+    tag = address >> self.tag_shift
+
+    # calculate index
+    set_mask = self.size // self.block_size
+    set_mask = (self.size // (self.block_size * 1)) - 1
+    set_num = (address >> self.set_shift) & set_mask
+    index = set_num * 1
+
+    # calculate offset
+    offset = address & (self.block_size - 1)
+    return tag, index, offset
+
   def write(self, address, byte):
     """TODO: Writes a byte to address.
 
@@ -89,17 +106,7 @@ class CACHE:
     """
     self.counter_reads += 1
 
-    # calculate tag
-    tag = address >> self.tag_shift
-
-    # calculate index
-    set_mask = self.size // self.block_size
-    set_mask = (self.size // (self.block_size * 1)) - 1
-    set_num = (address >> self.set_shift) & set_mask
-    index = set_num * 1
-
-    # calculate offset
-    offset = address & (self.block_size - 1)
+    tag, index, offset = self.split_tio(address)
 
     if self.debug:
       print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
