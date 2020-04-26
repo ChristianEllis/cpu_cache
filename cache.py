@@ -160,6 +160,11 @@ class CACHE:
     # increment the total counter reads
     self.counter_reads += 1
 
+  def flush_cache(self):
+    """Flushes cache data."""
+    self.cache_data =  [[0 for x in range(0, 2)] for x in range(0, self.lines)]
+
+  # graphical utils.
   def print_cache(self):
     """Displays contents of cache"""
     print("---cache dump---")
@@ -171,6 +176,7 @@ class CACHE:
     """Display cache counter statistics."""
     print("total reads: {}\ntotal writes: {}\n".format(self.counter_reads, self.counter_writes))
     print("read hits: {}\nread misses:{}\n".format(self.counter_read_hit, self.counter_read_miss))
+
 
 ### SIMULATOR ###
 def main():
