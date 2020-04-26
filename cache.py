@@ -92,11 +92,36 @@ class CACHE:
     offset = address & (self.block_size - 1)
     return tag, index, offset
 
-  def write(self, address, byte):
-    """TODO: Writes a byte to address.
+  def write(self, address, data):
+    """Writes a byte to a cache address.
 
     """
-    pass
+    # inc. write counter
+    self.counter_writes += 1
+
+    # split addr into TIO
+    tag, index, offset = self.split_tio(address)
+    if self.debug:
+      print("Tag: {}\nIndex: {}\nOffset: {}".format(tag, index, offset))
+
+    if self.tag_bits[index] == 1:
+      # if tag bit at set index is unused
+      print("MISS!")
+
+      # set tag bit
+      self.tag_bits[index] = 0
+      self.valid_bits[index] = 1
+
+      # read block into cache from memory at address
+      for i in range(0, self.block_size):
+        self.cache_data[index][offset+i] = self.memory[index+offset+i]
+      print('cache: ', self.cache_data)
+      # set dirty bit
+      self.dirty_bits[index] = 1
+      # write back byte into cache
+      self.cache_data[index][offset] = data
+      print('cache: ', self.cache_data)
+      
 
   def read(self, address):
     """Reads an address from the cache.
@@ -104,8 +129,10 @@ class CACHE:
     :param int address: Cache address.
 
     """
+    # inc. read counter
     self.counter_reads += 1
 
+    # split addr. into TIO
     tag, index, offset = self.split_tio(address)
 
     if self.debug:
@@ -117,6 +144,7 @@ class CACHE:
         self.counter_read_hit += 1
       else:
         print("Read: {} = Miss".format(hex(address)))
+        self.valid_bits[index] = 1
         self.cache[index] = tag
         self.counter_read_miss += 1
     else:
@@ -156,8 +184,9 @@ def main():
 
   myCache = CACHE(addr_width, cache_size, block_size, 1)
 
-  for i in range(0, 8):
-    myCache.read(i)
+
+  myCache.write(0x00, 0x01)
+  myCache.read(0x00)
 
   # print output of cache
   myCache.print_cache()
