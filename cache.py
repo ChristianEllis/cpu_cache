@@ -118,9 +118,11 @@ class CACHE:
       self.cache[index] = tag
       self.counter_read_miss += 1
 
-    # set cache to data stored in phy. memory
-    self.cache_data[index][offset] = self.memory[index+offset]
+    # pull block_size blocks from physical memory into cache
+    for i in range(0, self.block_size-1):
+      self.cache_data[index][offset+i] = self.memory[index+offset+i]
 
+    # increment the total counter reads
     self.counter_reads += 1
 
   def print_cache(self):
@@ -147,16 +149,12 @@ def main():
 
   myCache = CACHE(addr_width, cache_size, block_size, 1)
 
-  myCache.read(0x00)
-  myCache.read(0x01)
-  myCache.read(0x02)
-  myCache.read(0x03)
-  myCache.read(0x04)
-  myCache.read(0x05)
-  myCache.read(0x06)
-  myCache.read(0x07)
+  for i in range(0, 8):
+    myCache.read(i)
 
+  # print output of cache
   myCache.print_cache()
+  # display cache stats
   myCache.cache_stats()
 
 if __name__ == '__main__':
