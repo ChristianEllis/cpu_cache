@@ -5,6 +5,8 @@
 import math
 from binascii import hexlify
 from os import urandom
+import csv
+import random
 
 class CACHE:
   def __init__(self, addr_width, cache_size, block_size, assoc = 1, replacement='LRU',
@@ -41,7 +43,7 @@ class CACHE:
     self.set_shift = int(math.log(self.block_size, 2))
 
     # Build physical memory, randomly generate values in physical memory
-    self.memory = bytearray(urandom(self.addr_width ** 2))
+    self.memory = bytearray(urandom(self.size ** 2))
 
     # Build cache
     self.lines = int(self.size/self.block_size)
@@ -135,7 +137,6 @@ class CACHE:
     # return data at address
     return self.cache_data[index][offset]
 
-
   def read(self, address):
     """Reads an address from the cache.
     Returns data from address.
@@ -167,9 +168,12 @@ class CACHE:
       self.counter_read_miss += 1
 
     # pull block_size blocks from physical memory into cache
-    for i in range(0, self.block_size-offset):
-      self.cache_data[index][offset+i] = self.memory[index+offset+i]
-
+    for i in range(0, self.block_size - offset):
+      try:
+        self.cache_data[index][offset+i] = self.memory[index+offset+i]
+      except:
+        print("Buffer Overflow - Not enough memory, more cache memory than main memory?")
+        pass
     # increment the total counter reads
     self.counter_reads += 1
 
@@ -199,42 +203,50 @@ class CACHE:
 
   def cache_stats(self):
     """Display cache counter statistics."""
-    print("total reads: {}\ntotal writes: {}\n".format(self.counter_reads, self.counter_writes))
-    print("read hits: {}\nread misses:{}\n".format(self.counter_read_hit, self.counter_read_miss))
+    # print("total reads: {}\ntotal writes: {}\n".format(self.counter_reads, self.counter_writes))
+    # print("read hits: {}\nread misses:{}\n".format(self.counter_read_hit, self.counter_read_miss))
+    return ([
+      self.size, self.block_size,
+      self.counter_reads, self.counter_writes,
+      self.counter_read_hit, self.counter_read_miss,
+      self.counter_write_hit, self.counter_write_miss
+    ])
 
 
 ### "Simulator" ###
 def main():
   # -- cache parameters --- #
   addr_width = 4
-  cache_size = 8
-  block_size = 2
+  cache_sizes = [4 * 1024, 8 * 1024, 16 * 1024, 32 * 1024, 64 * 1024]
+  block_sizes = [4, 8, 16, 32, 64, 128, 256]
 
-  print("-- Cache Details --")
-  print("Address Width: ", addr_width)
-  print("Cache Size: ", cache_size)
-  print("Block Size: ", block_size)
-  print("-------------------")
-
-  # init. cache object without verbose output
-  # myCache = CACHE(addr_width, cache_size, block_size, 1, is_debug=False)
-
-  # init. cache object WITH verbose output
-  myCache = CACHE(addr_width, cache_size, block_size, 1, is_debug=False)
+  # -- used to keep track of experiments -- #
+  f = open('results.csv', 'w')
+  writer = csv.writer(f)
+  writer.writerow([
+    'cache_size', 'block_size',
+    'total_reads', 'total_writes',
+    'read_hits', 'read_misses',
+    'write_hits', 'write_misses'
+  ])
 
   # cache operations
-  data = myCache.read(0x00)
-  print("Data: ", hex(data))
+  for cache_size in cache_sizes:
+    for block_size in block_sizes:
+      myCache = CACHE(addr_width, cache_size, block_size, 1, is_debug=False)
 
-  myCache.read(0x03)
-  myCache.write(0x03, 0x01)
-  data = myCache.read(0x03)
-  print("Data: ", hex(data))
+      for i in range(0, 10000):
+        # data = myCache.read(i) # read sequentially
+        data = myCache.read(random.randint(0,5000)) # read randomly
+        myCache.write(i, data)
+
+      stats = myCache.cache_stats()
+      writer.writerow(stats)
+    print("done with cache: ",cache_size)
+if __name__ == '__main__':
+  main()
 
   # dump data from cache
-  myCache.print_cache()
+  # myCache.print_cache()
   # display cache stats
-  myCache.cache_stats()
-
-if __name__ == '__main__':
-    main()
+  # myCache.cache_stats()
